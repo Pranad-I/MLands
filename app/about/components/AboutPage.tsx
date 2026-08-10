@@ -7,19 +7,11 @@ import {
 import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
 import { ThemeToggle } from '@/components/ThemeToggle';
-
-const stack = [
-  'Next.js 13 (App Router)', 'TypeScript', 'Tailwind CSS', 'Supabase',
-  'Recharts', 'Radix UI', 'lucide-react',
-];
-
-const nodes = [
-  { name: 'Pi 3 (Scanner, Controller)', role: 'Continuously scans the network for new and existing devices. Runs the core decision engine and dashboard API.' },
-  { name: 'Pi Zero W (Portal)', role: 'Serves the captive portal for quarantined and guest devices.' },
-];
+import { systemMetadataService } from '@/lib/services/system-metadata-service';
 
 export function AboutPage() {
   const [collapsed, setCollapsed] = useState(false);
+  const aboutPageInfo = systemMetadataService.getAboutPageInfo();
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
@@ -54,13 +46,11 @@ export function AboutPage() {
                 <Shield className="h-6 w-6 text-white" />
               </div>
               <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
-                Intelligent Multi-Layer Network Defence System
+                {aboutPageInfo.title}
               </h2>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Version 8.8 · MLaNDS</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{aboutPageInfo.version}</p>
               <p className="mx-auto mt-3 max-w-xl text-xs text-slate-500 dark:text-slate-400">
-                A home and small-office network security console for reviewing device access requests,
-                monitoring connected devices, responding to alerts, and quarantining suspicious traffic
-                in real time.
+                {aboutPageInfo.description}
               </p>
             </div>
 
@@ -70,7 +60,7 @@ export function AboutPage() {
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Built With</h3>
               </div>
               <div className="flex flex-wrap gap-2">
-                {stack.map((s) => (
+                {aboutPageInfo.stack.map((s) => (
                   <span key={s} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                     {s}
                   </span>
@@ -84,7 +74,7 @@ export function AboutPage() {
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Connected Nodes</h3>
               </div>
               <div className="space-y-3">
-                {nodes.map((n) => (
+                {aboutPageInfo.nodes.map((n) => (
                   <div key={n.name} className="flex items-start justify-between gap-3 border-b border-slate-50 pb-3 last:border-b-0 last:pb-0 dark:border-slate-800">
                     <div>
                       <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{n.name}</p>
