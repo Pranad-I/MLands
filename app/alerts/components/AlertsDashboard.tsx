@@ -14,6 +14,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppData, type AlertType, type Severity, type SecurityAlert } from '@/lib/store';
+import { deviceActionController } from '@/lib/services/device-action-controller';
 
 const priorityLabel: Record<Severity, string> = { Critical: 'High', Warning: 'Medium', Info: 'Low' };
 const priorityColor: Record<Severity, string> = {
@@ -120,10 +121,6 @@ export function AlertsDashboard() {
     { name: 'Resolved', value: counts.resolved, color: '#16a34a' },
   ].filter((d) => d.value > 0);
 
-  function findDeviceForAlert(alert: SecurityAlert) {
-    return devices.find((d) => alert.device.toLowerCase().includes(d.name.toLowerCase()) || alert.device.includes(d.ipAddress));
-  }
-
   function handleAcknowledge() {
     if (!selected) return;
     setAlertStatus(selected.id, 'Dismissed');
@@ -136,14 +133,14 @@ export function AlertsDashboard() {
   }
   function handleBlockDevice() {
     if (!selected) return;
-    const device = findDeviceForAlert(selected);
+    const device = deviceActionController.findDeviceForAlert(selected, devices);
     if (!device) { toast.error('No matching managed device found'); return; }
     updateDeviceStatus(device.id, 'Blocked');
     toast.success(`${device.name} blocked`);
   }
   function handleQuarantineDevice() {
     if (!selected) return;
-    const device = findDeviceForAlert(selected);
+    const device = deviceActionController.findDeviceForAlert(selected, devices);
     if (!device) { toast.error('No matching managed device found'); return; }
     updateDeviceStatus(device.id, 'Quarantined');
     toast.success(`${device.name} quarantined`);

@@ -1,43 +1,20 @@
 'use client';
 
 import {
-  LayoutDashboard,
-  Monitor,
-  ClipboardList,
   Shield,
-  Activity,
-  AlertOctagon,
-  Bell,
-  Settings,
-  Info,
   Wifi,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { systemMetadataService } from '@/lib/services/system-metadata-service';
 
 type SidebarProps = {
   collapsed?: boolean;
   onToggle?: () => void;
 };
 
-const navItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-  { label: 'Devices', icon: Monitor, href: '/devices' },
-  { label: 'Access Requests', icon: ClipboardList, href: '/access-requests' },
-  { label: 'Access Control', icon: Shield, href: '/access-control' },
-  { label: 'Activity Logs', icon: Activity, href: '/activity-log' },
-  { label: 'Quarantine', icon: AlertOctagon, href: '/quarantine' },
-  { label: 'Alerts', icon: Bell, href: '/alerts', badge: 2 },
-  { label: 'Settings', icon: Settings, href: '/settings' },
-  { label: 'About', icon: Info, href: '/about' },
-];
-
-const connectedNodes = [
-  { name: 'Pi 5 (Controller)', status: 'Online' },
-  { name: 'Pi 3 (Scanner)', status: 'Online' },
-  { name: 'Pi Zero W (Portal)', status: 'Online' },
-];
+const navItems = systemMetadataService.getSidebarNavigationItems();
+const connectedNodes = systemMetadataService.getSidebarConnectedNodes();
 
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
