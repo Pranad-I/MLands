@@ -13,6 +13,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { DeviceOverviewChart } from './DeviceOverviewChart';
 import { NetworkActivityChart, type ActivityPoint } from './NetworkActivityChart';
 import { ManagedDevicesTable } from './ManagedDevicesTable';
+import { deviceActionController } from '@/lib/services/device-action-controller';
 
 function StatCard({ title, value, subtitle, bg, border, icon: Icon, iconBg }: {
   title: string; value: string | number; subtitle: string;
@@ -117,25 +118,25 @@ export function AccessControlDashboard() {
   }, [total, approved, blocked, quarantined, unknown]);
 
   function approveNext() {
-    const target = devices.find((d) => d.status === 'Unknown');
+    const target = deviceActionController.findUnknownDevice(devices);
     if (!target) { toast.info('No devices are awaiting approval'); return; }
     updateDeviceStatus(target.id, 'Approved');
     toast.success(`${target.name} approved`);
   }
   function blockNext() {
-    const target = devices.find((d) => d.status === 'Unknown' && d.risk === 'High') ?? devices.find((d) => d.status === 'Unknown');
+    const target = deviceActionController.findUnknownDeviceForBlock(devices);
     if (!target) { toast.info('No unresolved devices to block'); return; }
     updateDeviceStatus(target.id, 'Blocked');
     toast.success(`${target.name} blocked`);
   }
   function quarantineNext() {
-    const target = devices.find((d) => d.risk === 'High' && d.status !== 'Quarantined' && d.status !== 'Blocked');
+    const target = deviceActionController.findHighRiskDeviceForQuarantine(devices);
     if (!target) { toast.info('No high-risk devices to quarantine'); return; }
     updateDeviceStatus(target.id, 'Quarantined');
     toast.success(`${target.name} quarantined`);
   }
   function markUnknown() {
-    const target = devices.find((d) => d.status === 'Approved');
+    const target = deviceActionController.findApprovedDeviceToMarkUnknown(devices);
     if (!target) { toast.info('No approved devices to flag'); return; }
     updateDeviceStatus(target.id, 'Unknown');
     toast.success(`${target.name} flagged for further monitoring`);

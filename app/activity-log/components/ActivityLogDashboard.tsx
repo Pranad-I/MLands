@@ -8,6 +8,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppData, type EventType, type RiskLevel, type LogEntry } from '@/lib/store';
+import { csvExportService } from '@/lib/services/csv-export-service';
 
 const PAGE_SIZE = 7;
 
@@ -23,22 +24,6 @@ const riskBadge: Record<RiskLevel, string> = {
   Medium: 'bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400',
   High: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400',
 };
-
-function exportToCsv(rows: LogEntry[]) {
-  const header = ['Time', 'Event Type', 'Description', 'IP Address', 'Device', 'Risk Level'];
-  const lines = rows.map((r) => [r.timestamp, r.eventType, r.details, r.ipAddress, r.device, r.risk]
-    .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','));
-  const csv = [header.join(','), ...lines].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `activity-log-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
 
 export function ActivityLogDashboard() {
   const { logs } = useAppData();
@@ -121,7 +106,11 @@ export function ActivityLogDashboard() {
                 <Calendar className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-slate-400" />
               </div>
               <button
-                onClick={() => exportToCsv(filtered)}
+                onClick={() => csvExportService.exportRows(
+                  'activity-log',
+                  ['Time', 'Event Type', 'Description', 'IP Address', 'Device', 'Risk Level'],
+                  filtered.map((r) => [r.timestamp, r.eventType, r.details, r.ipAddress, r.device, r.risk]),
+                )}
                 className="ml-auto flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 <Download className="h-3.5 w-3.5" /> Export

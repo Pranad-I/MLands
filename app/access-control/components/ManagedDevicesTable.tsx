@@ -7,6 +7,7 @@ import {
   Search, SlidersHorizontal, Download, ChevronRight, X, Check, Ban, ShieldAlert,
 } from 'lucide-react';
 import { useAppData, type Device, type DeviceStatus } from '@/lib/store';
+import { csvExportService } from '@/lib/services/csv-export-service';
 
 function statusStyle(status: DeviceStatus) {
   switch (status) {
@@ -36,22 +37,6 @@ function DeviceIcon({ type }: { type: string }) {
     case 'computer': return <Monitor className={cls} />;
     default: return <HelpCircle className={cls} />;
   }
-}
-
-function exportToCsv(rows: Device[]) {
-  const header = ['Device Name', 'IP Address', 'MAC Address', 'Status', 'Risk Level', 'First Seen', 'Last Seen'];
-  const lines = rows.map((d) => [d.name, d.ipAddress, d.macAddress, d.status, d.risk, d.firstSeen, d.lastSeen]
-    .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','));
-  const csv = [header.join(','), ...lines].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `managed-devices-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }
 
 type Props = { devices: Device[] };
@@ -119,7 +104,11 @@ export function ManagedDevicesTable({ devices }: Props) {
             )}
           </div>
           <button
-            onClick={() => exportToCsv(filtered)}
+            onClick={() => csvExportService.exportRows(
+              'managed-devices',
+              ['Device Name', 'IP Address', 'MAC Address', 'Status', 'Risk Level', 'First Seen', 'Last Seen'],
+              filtered.map((d) => [d.name, d.ipAddress, d.macAddress, d.status, d.risk, d.firstSeen, d.lastSeen]),
+            )}
             className="flex h-7 items-center gap-1 rounded border border-slate-200 bg-white px-2 text-[11px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <Download className="h-3 w-3" /> Export
