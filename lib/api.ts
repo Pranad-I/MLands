@@ -1,5 +1,9 @@
 export type RiskLevel = 'Low' | 'Medium' | 'High'
 
+/**
+ * Dashboard data contract used by access-control UI components.
+ * Mirrors the payload returned by `/api/access-control/dashboard`.
+ */
 export interface DeviceDTO {
   id: string
   name: string
@@ -67,10 +71,13 @@ export interface DashboardDTO {
   segmentation: SegmentDTO[]
 }
 
+/**
+ * Shared SWR-style fetcher with basic HTTP status validation.
+ */
 export const fetcher = (url: string) =>
-  fetch(url).then((res) => {
-    if (!res.ok) throw new Error('Request failed')
-    return res.json()
+  fetch(url).then((response) => {
+    if (!response.ok) throw new Error(`Request failed (${response.status})`)
+    return response.json()
   })
 
 export type DecisionAction = 'approve' | 'deny' | 'quarantine'
@@ -79,10 +86,10 @@ export async function resolveRequest(
   requestId: string,
   action: DecisionAction,
 ): Promise<DashboardDTO> {
-  const res = await fetch(
+  const response = await fetch(
     `/api/access-control/requests/${requestId}/${action}`,
     { method: 'POST' },
   )
-  if (!res.ok) throw new Error('Action failed')
-  return res.json()
+  if (!response.ok) throw new Error(`Action failed (${response.status})`)
+  return response.json()
 }

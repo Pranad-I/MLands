@@ -2,6 +2,17 @@
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 
+/**
+ * Central in-memory store for demo dashboards.
+ *
+ * The provider manages shared state for:
+ * - managed devices
+ * - alert triage data
+ * - quarantine records
+ * - activity logs
+ *
+ * Mutations in one page update all other pages immediately via React Context.
+ */
 export type DeviceType = 'phone' | 'laptop' | 'computer' | 'tv' | 'printer' | 'other';
 export type DeviceStatus = 'Approved' | 'Blocked' | 'Quarantined' | 'Unknown';
 export type RiskLevel = 'None' | 'Low' | 'Medium' | 'High';
@@ -133,6 +144,7 @@ type AppDataContextValue = {
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
 
+// Deterministic labels used to simulate discovery of unknown devices during scans.
 const scanCandidates: Array<{ name: string; type: DeviceType }> = [
   { name: 'Unknown Device', type: 'other' },
   { name: 'Unregistered Sensor', type: 'other' },
@@ -146,6 +158,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [quarantine, setQuarantine] = useState<QuarantinedDevice[]>(seedQuarantine);
   const [logs, setLogs] = useState<LogEntry[]>(seedLogs);
 
+  /**
+   * Appends an audit record for operator and system actions.
+   */
   function logAction(device: string, ipAddress: string, action: DeviceStatus, details: string, performedBy = 'Admin', risk: RiskLevel = 'None') {
     setLogs((prev) => [
       { id: `l${Date.now()}`, device, ipAddress, action, eventType: eventTypeFor(action), risk, performedBy, details, timestamp: timestampNow() },
@@ -154,19 +169,19 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   }
 
   function updateDeviceStatus(id: string, status: DeviceStatus, by = 'Admin') {
-    setDevices((prev) => prev.map((d) => {
-      if (d.id !== id) return d;
-      logAction(d.name, d.ipAddress, status, `Status changed to ${status} by ${by}.`, by, d.risk);
-      return { ...d, status };
+    setDevices((prev) => prev.map((device) => {
+      if (device.id !== id) return device;
+      logAction(device.name, device.ipAddress, status, `Status changed to ${status} by ${by}.`, by, device.risk);
+      return { ...device, status };
     }));
 
     if (status === 'Quarantined') {
       setDevices((prev) => {
-        const target = prev.find((d) => d.id === id);
-        if (target) {
-          setQuarantine((q) => [
-            { id: `q${Date.now()}`, name: target.name, type: target.type, ipAddress: target.ipAddress, macAddress: target.macAddress, reason: 'Manually quarantined from the Devices page.', risk: target.risk === 'None' ? 'Medium' : target.risk, quarantinedAt: 'Just now', minutesQuarantined: 0, autoQuarantined: false, autoReleaseIn: null },
-            ...q,
+        const targetDevice = prev.find((device) => device.id === id);
+        if (targetDevice) {
+          setQuarantine((previousQuarantine) => [
+            { id: `q${Date.now()}`, name: targetDevice.name, type: targetDevice.type, ipAddress: targetDevice.ipAddress, macAddress: targetDevice.macAddress, reason: 'Manually quarantined from the Devices page.', risk: targetDevice.risk === 'None' ? 'Medium' : targetDevice.risk, quarantinedAt: 'Just now', minutesQuarantined: 0, autoQuarantined: false, autoReleaseIn: null },
+            ...previousQuarantine,
           ]);
         }
         return prev;
@@ -182,22 +197,22 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   function removeDevice(id: string) {
     setDevices((prev) => {
-      const target = prev.find((d) => d.id === id);
-      if (target) logAction(target.name, target.ipAddress, 'Blocked', 'Device removed from managed device list.', 'Admin', target.risk);
-      return prev.filter((d) => d.id !== id);
+      const targetDevice = prev.find((device) => device.id === id);
+      if (targetDevice) logAction(targetDevice.name, targetDevice.ipAddress, 'Blocked', 'Device removed from managed device list.', 'Admin', targetDevice.risk);
+      return prev.filter((device) => device.id !== id);
     });
   }
 
   function scanNetwork(): Device | null {
     // Simulates a network scan turning up a new, not-yet-classified device.
-    const pick = scanCandidates[Math.floor(Math.random() * scanCandidates.length)];
-    const octet = 100 + Math.floor(Math.random() * 150);
+    const candidateDevice = scanCandidates[Math.floor(Math.random() * scanCandidates.length)];
+    const hostOctet = 100 + Math.floor(Math.random() * 150);
     const newDevice: Device = {
       id: `d${Date.now()}`,
-      name: pick.name,
-      type: pick.type,
-      ipAddress: `192.168.1.${octet}`,
-      macAddress: `AA:BB:CC:DD:${octet.toString(16).toUpperCase().padStart(2, '0')}:${Math.floor(Math.random() * 90 + 10)}`,
+      name: candidateDevice.name,
+      type: candidateDevice.type,
+      ipAddress: `192.168.1.${hostOctet}`,
+      macAddress: `AA:BB:CC:DD:${hostOctet.toString(16).toUpperCase().padStart(2, '0')}:${Math.floor(Math.random() * 90 + 10)}`,
       status: 'Unknown',
       risk: Math.random() > 0.5 ? 'High' : 'Medium',
       dataUsageGb: Math.round(Math.random() * 20) / 10,
@@ -210,37 +225,37 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   }
 
   function setAlertStatus(id: string, status: AlertStatus) {
-    setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
+    setAlerts((prev) => prev.map((alert) => (alert.id === id ? { ...alert, status } : alert)));
   }
 
   function resolveAllAlerts() {
-    setAlerts((prev) => prev.map((a) => (a.status === 'Active' ? { ...a, status: 'Resolved' } : a)));
+    setAlerts((prev) => prev.map((alert) => (alert.status === 'Active' ? { ...alert, status: 'Resolved' } : alert)));
   }
 
   function releaseFromQuarantine(id: string) {
     setQuarantine((prev) => {
-      const target = prev.find((d) => d.id === id);
-      if (target) {
-        logAction(target.name, target.ipAddress, 'Approved', 'Released from quarantine back onto the network.', 'Admin', target.risk);
-        setDevices((ds) => ds.map((d) => (d.name === target.name ? { ...d, status: 'Approved' } : d)));
+      const quarantinedDevice = prev.find((device) => device.id === id);
+      if (quarantinedDevice) {
+        logAction(quarantinedDevice.name, quarantinedDevice.ipAddress, 'Approved', 'Released from quarantine back onto the network.', 'Admin', quarantinedDevice.risk);
+        setDevices((devicesState) => devicesState.map((device) => (device.name === quarantinedDevice.name ? { ...device, status: 'Approved' } : device)));
       }
-      return prev.filter((d) => d.id !== id);
+      return prev.filter((device) => device.id !== id);
     });
   }
 
   function blockPermanently(id: string) {
     setQuarantine((prev) => {
-      const target = prev.find((d) => d.id === id);
-      if (target) {
-        logAction(target.name, target.ipAddress, 'Blocked', 'Permanently blocked from quarantine.', 'Admin', target.risk);
-        setDevices((ds) => ds.map((d) => (d.name === target.name ? { ...d, status: 'Blocked' } : d)));
+      const quarantinedDevice = prev.find((device) => device.id === id);
+      if (quarantinedDevice) {
+        logAction(quarantinedDevice.name, quarantinedDevice.ipAddress, 'Blocked', 'Permanently blocked from quarantine.', 'Admin', quarantinedDevice.risk);
+        setDevices((devicesState) => devicesState.map((device) => (device.name === quarantinedDevice.name ? { ...device, status: 'Blocked' } : device)));
       }
-      return prev.filter((d) => d.id !== id);
+      return prev.filter((device) => device.id !== id);
     });
   }
 
   function extendQuarantine(id: string) {
-    setQuarantine((prev) => prev.map((d) => (d.id === id ? { ...d, autoReleaseIn: '6h 0m' } : d)));
+    setQuarantine((prev) => prev.map((device) => (device.id === id ? { ...device, autoReleaseIn: '6h 0m' } : device)));
   }
 
   const value = useMemo<AppDataContextValue>(() => ({
@@ -254,7 +269,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAppData() {
-  const ctx = useContext(AppDataContext);
-  if (!ctx) throw new Error('useAppData must be used within an AppDataProvider');
-  return ctx;
+  const contextValue = useContext(AppDataContext);
+  if (!contextValue) throw new Error('useAppData must be used within an AppDataProvider');
+  return contextValue;
 }

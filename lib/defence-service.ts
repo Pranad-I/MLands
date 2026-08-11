@@ -41,7 +41,7 @@ export class RiskEngine {
 
   computeScore(factors: RiskFactor[]): number {
     const total = factors.reduce(
-      (sum, f) => sum + (RiskEngine.WEIGHTS[f.level] ?? 0),
+      (sum, factor) => sum + (RiskEngine.WEIGHTS[factor.level] ?? 0),
       0,
     )
     return Math.min(Math.round(total), 100)
@@ -190,20 +190,20 @@ export class AccessControlService {
   // -- queries -----------------------------------------------------------
 
   get pendingRequests(): AccessRequest[] {
-    return this.requests.filter((r) => r.status === 'Pending')
+    return this.requests.filter((request) => request.status === 'Pending')
   }
 
   private findRequest(id: string): AccessRequest {
-    const req = this.requests.find((r) => r.requestId === id)
-    if (!req) throw new RequestNotFoundError(id)
-    return req
+    const request = this.requests.find((candidate) => candidate.requestId === id)
+    if (!request) throw new RequestNotFoundError(id)
+    return request
   }
 
   // -- history -----------------------------------------------------------
 
   private log(action: string, request: AccessRequest): void {
     this.historySeq++
-    const label = `${request.device.name} (${request.device.ipAddress})`
+    const deviceLabel = `${request.device.name} (${request.device.ipAddress})`
     const timestamp = new Date().toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
@@ -213,63 +213,67 @@ export class AccessControlService {
       id: `h${this.historySeq}`,
       timestamp,
       action,
-      deviceLabel: label,
+      deviceLabel,
       riskLevel: request.riskLevel,
     })
   }
 
   private adjustSegment(key: string, delta: number): void {
-    const seg = this.segments.get(key)
-    if (seg) seg.deviceCount = Math.max(0, seg.deviceCount + delta)
+    const segment = this.segments.get(key)
+    if (segment) segment.deviceCount = Math.max(0, segment.deviceCount + delta)
   }
 
   // -- operator actions --------------------------------------------------
 
   approveRequest(id: string): void {
-    const req = this.findRequest(id)
-    req.resolve('Approved')
+    const request = this.findRequest(id)
+    request.resolve('Approved')
     this.approvedToday++
     this.totalControlled++
     this.trustedDevices.unshift(
       new TrustedDevice(
-        req.device.deviceId,
-        req.device.name,
-        req.device.ipAddress,
-        req.device.macAddress,
-        req.device.platform,
+        request.device.deviceId,
+        request.device.name,
+        request.device.ipAddress,
+        request.device.macAddress,
+        request.device.platform,
         new Date().toLocaleDateString('en-GB'),
       ),
     )
     this.adjustSegment('pending', -1)
     this.adjustSegment('trusted', +1)
-    this.log('Access approved', req)
+    this.log('Access approved', request)
   }
 
   denyRequest(id: string): void {
-    const req = this.findRequest(id)
-    req.resolve('Denied')
+    const request = this.findRequest(id)
+    request.resolve('Denied')
     this.deniedToday++
     this.adjustSegment('pending', -1)
     this.adjustSegment('blocked', +1)
-    this.log('Access denied', req)
+    this.log('Access denied', request)
   }
 
   quarantineRequest(id: string): void {
-    const req = this.findRequest(id)
-    req.resolve('Quarantined')
+    const request = this.findRequest(id)
+    request.resolve('Quarantined')
     this.quarantinedDevices++
     this.totalControlled++
     this.adjustSegment('pending', -1)
     this.adjustSegment('quarantine', +1)
-    this.log('Device quarantined', req)
+    this.log('Device quarantined', request)
   }
 
   // -- read models -------------------------------------------------------
 
   getDecision(): AccessRequest | null {
-    const pending = this.pendingRequests
-    if (!pending.length) return null
-    return pending.reduce((max, r) => (r.riskScore > max.riskScore ? r : max))
+    const pendingRequests = this.pendingRequests
+    if (!pendingRequests.length) return null
+    return pendingRequests.reduce((highestRiskRequest, currentRequest) =>
+      currentRequest.riskScore > highestRiskRequest.riskScore
+        ? currentRequest
+        : highestRiskRequest,
+    )
   }
 
   getDashboard() {
