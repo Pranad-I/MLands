@@ -94,10 +94,3 @@ so the whole app is usable immediately.
 
 Next.js 13 (App Router) · TypeScript · Tailwind CSS · Supabase · Recharts ·
 Radix UI · lucide-react · framer-motion · next-themes
-
-## Known follow-ups
-
-- This project pins **Next.js 13.5.1**, which is past its support window. It
-  doesn't use the experimental Server Actions feature that the recent RSC
-  CVEs target, but upgrading to a current Next 14/15 release is recommended
-  when you have time to test for breaking changes.
