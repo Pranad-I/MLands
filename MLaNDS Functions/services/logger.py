@@ -1,18 +1,78 @@
-"""Validated CSV persistence service."""
+"""CSV logger for recorded network assessments.
+
+This component provides the system's audit trail. It stores risk evaluations in a
+plain CSV file so the project has a persistent evidence source separate from the
+live network scan. This is appropriate because a network security tool needs a
+traceable record of what was observed and how it was classified.
+"""
+
 import csv
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+
 class DeviceLogger:
-    HEADERS=["Timestamp","IP Address","MAC Address","Vendor","Hostname","Device Name","Status","Risk Score","Baseline Risk","Final Risk","New Device","Changed","AI Available","AI Cached","AI Confidence","AI Explanation","AI Evidence","Recommendation"]
-    def __init__(self,path): self.path=Path(path)
-    def log(self,a):
-        if not a.device.mac: raise ValueError("MAC is required")
-        if not 0<=a.ai.confidence<=1: raise ValueError("AI confidence must be 0-1")
-        exists=self.path.is_file() and self.path.stat().st_size>0
-        row=[datetime.now().strftime("%Y-%m-%d %H:%M:%S"),a.device.ip,a.device.mac,a.device.vendor,a.device.hostname,a.device.name,a.device.status,a.score,a.baseline_risk.name,a.final_risk.name,a.new_device,a.changed,a.ai.available,a.ai.cached,f"{a.ai.confidence:.3f}",a.ai.explanation,"; ".join(a.ai.evidence),a.ai.recommendation]
+    """Writes each device assessment to a CSV file with consistent column names."""
+
+    HEADERS = [
+        "Timestamp",
+        "IP Address",
+        "MAC Address",
+        "Vendor",
+        "Hostname",
+        "Device Name",
+        "Status",
+        "Risk Score",
+        "Baseline Risk",
+        "Final Risk",
+        "New Device",
+        "Changed",
+        "AI Available",
+        "AI Cached",
+        "AI Confidence",
+        "AI Explanation",
+        "AI Evidence",
+        "Recommendation",
+    ]
+
+    def __init__(self, path):
+        """Store the log path but defer file access until a log record is written."""
+        self.path = Path(path)
+
+    def log(self, assessment):
+        """Write a single assessment to CSV with validation of required values."""
+        if not assessment.device.mac:
+            raise ValueError("MAC is required")
+        if not 0 <= assessment.ai.confidence <= 1:
+            raise ValueError("AI confidence must be 0-1")
+
+        exists = self.path.is_file() and self.path.stat().st_size > 0
+        row = [
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            assessment.device.ip,
+            assessment.device.mac,
+            assessment.device.vendor,
+            assessment.device.hostname,
+            assessment.device.name,
+            assessment.device.status,
+            assessment.score,
+            assessment.baseline_risk.name,
+            assessment.final_risk.name,
+            assessment.new_device,
+            assessment.changed,
+            assessment.ai.available,
+            assessment.ai.cached,
+            f"{assessment.ai.confidence:.3f}",
+            assessment.ai.explanation,
+            "; ".join(assessment.ai.evidence),
+            assessment.ai.recommendation,
+        ]
+
         try:
-            with self.path.open("a",newline="",encoding="utf-8") as f:
-                w=csv.writer(f)
-                if not exists:w.writerow(self.HEADERS)
-                w.writerow(row)
-        except OSError as e: raise OSError(f"Could not write log: {e}") from e
+            with self.path.open("a", newline="", encoding="utf-8") as file_object:
+                writer = csv.writer(file_object)
+                if not exists:
+                    writer.writerow(self.HEADERS)
+                writer.writerow(row)
+        except OSError as error:
+            raise OSError(f"Could not write log: {error}") from error
