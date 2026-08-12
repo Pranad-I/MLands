@@ -18,6 +18,32 @@ from ipaddress import ip_network
 from pathlib import Path
 
 
+def _load_env_file(path):
+    """Load key/value pairs from a local env file if it exists.
+
+    The configuration layer pulls values from the repository env file so the
+    Gemini key can be supplied without hard-coding it in source code. Only
+    missing environment variables are populated from the file.
+    """
+    if not path.is_file():
+        return
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        entry = line.strip()
+        if not entry or entry.startswith("#"):
+            continue
+        if entry.startswith("export "):
+            entry = entry[7:].strip()
+        if "=" not in entry:
+            continue
+
+        key, value = entry.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
 class ConfigurationError(ValueError):
     """Raised when startup values are missing, malformed, or not sensible."""
 
@@ -110,6 +136,7 @@ class Settings:
     @classmethod
     def from_environment(cls):
         """Build a validated Settings object from environment variables."""
+        _load_env_file(Path(__file__).resolve().parents[2] / ".env.local")
         try:
             interval = int(os.getenv("MLANDS_SCAN_INTERVAL", "30"))
             timeout = int(os.getenv("MLANDS_SCAN_TIMEOUT", "3"))

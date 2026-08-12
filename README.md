@@ -92,7 +92,12 @@ to enable authentication and live data on the Access Requests / Access Control p
 ```
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+GEMINI_API_KEY=your-gemini-api-key
 ```
+
+The Python network-monitoring subsystem reads `GEMINI_API_KEY` from the same
+repository `.env.local` file, so the AI analyser can use the key without the
+secret appearing in source code.
 
 Then run the migrations in `supabase/migrations/` against your project (via the
 Supabase CLI or SQL editor) to create the `devices`, `access_logs`,
