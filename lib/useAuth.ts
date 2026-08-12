@@ -1,3 +1,11 @@
+/**
+ * Authentication hook for the MLaNDS app.
+ *
+ * This hook wraps Supabase session state so the rest of the application can
+ * access a predictable `session`, `user`, and `loading` state. The logic is
+ * intentionally small and reusable, which keeps route protection and account UI
+ * simple while still supporting real authentication when configured.
+ */
 'use client';
 
 import { useEffect, useState } from 'react';

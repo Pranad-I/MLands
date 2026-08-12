@@ -1,3 +1,11 @@
+/**
+ * Shared application state for the MLaNDS dashboard.
+ *
+ * This module centralises the in-memory records used by the device inventory,
+ * alerts, logs, and quarantine pages. Keeping the state in one provider makes
+ * the UI feel live and consistent while still keeping all data mutation logic in
+ * one place for easier maintenance and auditability.
+ */
 'use client';
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';

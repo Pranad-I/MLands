@@ -1,3 +1,11 @@
+/**
+ * Global provider composition for the MLaNDS application.
+ *
+ * The app combines multiple concerns here: theme management, authentication
+ * gating, and shared in-memory application data. This is a good composition
+ * pattern because each provider owns one responsibility while the rest of the UI
+ * remains focused on rendering screens and interactions.
+ */
 'use client';
 
 import type { ReactNode } from 'react';

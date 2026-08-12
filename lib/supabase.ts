@@ -1,3 +1,11 @@
+/**
+ * Supabase client configuration and fallback behaviour for MLaNDS.
+ *
+ * This file keeps the project resilient when environment credentials are missing.
+ * Instead of crashing, the app exposes a lightweight fallback client so the UI
+ * can still load demo data and keep the experience usable during setup or
+ * testing.
+ */
 import { createClient, type Session } from '@supabase/supabase-js';
 
 function createFallbackQuery() {

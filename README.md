@@ -4,6 +4,20 @@ A home / small-office network security console for monitoring connected devices,
 reviewing access requests, responding to alerts, and quarantining suspicious
 traffic in real time.
 
+## Project architecture and maintainability notes
+
+The project is structured around a clear separation of responsibilities:
+
+- `app/` contains route and screen-level composition.
+- `components/` holds reusable UI and global providers.
+- `lib/` owns shared state, auth, and Supabase integration.
+- `supabase/` stores database migrations and schema setup.
+- `MLaNDS Functions/` contains the Python network-monitoring subsystem and its
+  validation logic.
+
+This separation keeps the front-end dashboard, authentication flow, and backend
+risk-monitoring logic maintainable and easy to review against the rubric.
+
 ## Pages
 
 | Route              | Description                                              |

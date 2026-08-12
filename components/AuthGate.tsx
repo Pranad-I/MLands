@@ -1,3 +1,12 @@
+/**
+ * Route protection for the MLaNDS application.
+ *
+ * This component enforces the sign-in flow by redirecting unauthenticated users
+ * away from protected pages and preventing authenticated users from revisiting
+ * the public login/signup screens. It also provides a graceful fallback when the
+ * Supabase environment is not configured so the demo remains usable out of the
+ * box.
+ */
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
