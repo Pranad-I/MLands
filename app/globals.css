@@ -1,3 +1,13 @@
+/* GLOBAL.CSS
+
+This file is used to store variables and items
+that are refferenced and used throughout the system,
+such as colour, formatting and spacing. It contains
+the animations and dark/light mode settings.
+
+*/
+
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -69,6 +79,7 @@ input[type='range'].styled-slider:disabled {
   cursor: not-allowed;
 }
 
+/* Colours used within the system */
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -171,6 +182,7 @@ input[type='range'].styled-slider:disabled {
   --top-4: 4px;
 }
 
+/* Dark theme settings */
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
