@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-  Bell, Search, Menu, Shield, CheckCircle, XCircle, AlertTriangle, Clock, Monitor, Smartphone, Laptop, Tv, Printer, HelpCircle, RefreshCw, Wifi,
+  Search, Menu, Shield, CheckCircle, XCircle, AlertTriangle, Clock, Monitor, Smartphone, Laptop, Tv, Printer, HelpCircle, RefreshCw, Wifi,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
@@ -10,6 +11,7 @@ import {
 import { Sidebar } from '@/components/Sidebar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { AdminMenu } from '@/components/AdminMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 import { fetcher, resolveRequest, type DashboardDTO, type AccessRequestDTO } from '@/lib/api';
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -42,7 +44,7 @@ function StatCard({ label, value, sub, icon: Icon, accent }: {
   icon: React.ElementType; accent: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <div className="hover-lift rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
@@ -194,18 +196,18 @@ export function AccessRequestsDashboard() {
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
-            <div className="relative">
-              <Bell className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-              <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[7px] font-bold text-white">
-                {data?.summary.pendingRequests ?? 0}
-              </span>
-            </div>
+            <NotificationBell />
             <AdminMenu />
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto">
+        <motion.main
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="flex-1 overflow-y-auto"
+        >
           {loading ? (
             <div className="flex h-full items-center justify-center">
               <div className="flex flex-col items-center gap-3">
@@ -216,7 +218,7 @@ export function AccessRequestsDashboard() {
           ) : !data ? null : (
             <div className="space-y-4 px-5 py-4">
               {/* Summary stats */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+              <div className="stagger-children grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
                 <StatCard label="Pending Requests" value={data.summary.pendingRequests} sub="awaiting decision" icon={Clock} accent="bg-amber-100 text-amber-600" />
                 <StatCard label="Approved Today" value={data.summary.approvedToday} icon={CheckCircle} accent="bg-emerald-100 text-emerald-600" />
                 <StatCard label="Denied Today" value={data.summary.deniedToday} icon={XCircle} accent="bg-red-100 text-red-600" />
@@ -225,7 +227,7 @@ export function AccessRequestsDashboard() {
               </div>
 
               {/* Decision panel + segmentation */}
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="stagger-children grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 {/* Decision panel */}
                 <div>
                   <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -310,7 +312,7 @@ export function AccessRequestsDashboard() {
               </div>
 
               {/* Pending requests list + trusted devices */}
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="stagger-children grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 {/* Pending requests */}
                 <div>
                   <div className="mb-2 flex items-center justify-between">
@@ -411,7 +413,7 @@ export function AccessRequestsDashboard() {
               </div>
             </div>
           )}
-        </main>
+        </motion.main>
       </div>
     </div>
   );

@@ -1,11 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-  Search, Bell, Menu, Download, Calendar, ChevronRight,
+  Search, Menu, Download, Calendar, ChevronRight,
 } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppData, type EventType, type RiskLevel, type LogEntry } from '@/lib/store';
 import { csvExportService } from '@/lib/services/csv-export-service';
@@ -69,12 +71,17 @@ export function ActivityLogDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Bell className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+            <NotificationBell />
             <AdminMenu />
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-5 py-4">
+        <motion.main
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="flex-1 overflow-y-auto px-5 py-4"
+        >
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex flex-1 items-center sm:flex-none">
@@ -117,7 +124,7 @@ export function ActivityLogDashboard() {
               </button>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="stagger-rows overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
               <div className="grid grid-cols-[0.8fr_0.8fr_1.8fr_1fr_1.2fr_0.8fr] gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-[11px] font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
                 <span>Time</span>
                 <span>Event Type</span>
@@ -175,7 +182,7 @@ export function ActivityLogDashboard() {
               </div>
             </div>
           </div>
-        </main>
+        </motion.main>
       </div>
     </div>
   );

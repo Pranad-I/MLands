@@ -1,14 +1,16 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
-  Bell, Search, Menu, CheckCircle2, Ban, ShieldAlert, HelpCircle, Monitor, Smartphone, Laptop, Tv, Printer, ArrowUpRight, Info,
+  Search, Menu, CheckCircle2, Ban, ShieldAlert, HelpCircle, Monitor, Smartphone, Laptop, Tv, Printer, ArrowUpRight, Info,
 } from 'lucide-react';
 import { useAppData, type Device } from '@/lib/store';
 import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DeviceOverviewChart } from './DeviceOverviewChart';
 import { NetworkActivityChart, type ActivityPoint } from './NetworkActivityChart';
@@ -20,7 +22,7 @@ function StatCard({ title, value, subtitle, bg, border, icon: Icon, iconBg }: {
   bg: string; border: string; icon: React.ElementType; iconBg: string;
 }) {
   return (
-    <div className={`rounded-lg border ${border} ${bg} p-3.5 flex items-start justify-between min-h-[76px]`}>
+    <div className={`hover-lift rounded-lg border ${border} ${bg} p-3.5 flex items-start justify-between min-h-[76px]`}>
       <div className="space-y-0.5">
         <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{title}</p>
         <p className="text-lg font-bold text-slate-700 dark:text-slate-100">{value}</p>
@@ -172,17 +174,19 @@ export function AccessControlDashboard() {
               />
             </div>
             <ThemeToggle />
-            <div className="relative">
-              <Bell className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-              <span className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-[7px] font-bold text-white">{unknown}</span>
-            </div>
+            <NotificationBell />
             <AdminMenu />
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
+        <motion.main
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="flex-1 overflow-y-auto"
+        >
           <div className="space-y-3 px-4 py-3">
-            <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+            <section className="stagger-children grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
               <StatCard title="Total Devices" value={total} subtitle="connected" bg="bg-blue-50 dark:bg-blue-500/5" border="border-blue-100 dark:border-blue-500/20" icon={Monitor} iconBg="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400" />
               <StatCard title="Approved Devices" value={approved} subtitle={`${total > 0 ? ((approved / total) * 100).toFixed(1) : 0}%`} bg="bg-emerald-50 dark:bg-emerald-500/5" border="border-emerald-100 dark:border-emerald-500/20" icon={CheckCircle2} iconBg="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400" />
               <StatCard title="Blocked Devices" value={blocked} subtitle={`${total > 0 ? ((blocked / total) * 100).toFixed(1) : 0}%`} bg="bg-red-50 dark:bg-red-500/5" border="border-red-100 dark:border-red-500/20" icon={Ban} iconBg="bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400" />
@@ -191,7 +195,7 @@ export function AccessControlDashboard() {
               <StatCard title="Actions Logged (Today)" value={logs.length} subtitle="total events" bg="bg-blue-50 dark:bg-blue-500/5" border="border-blue-100 dark:border-blue-500/20" icon={ArrowUpRight} iconBg="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400" />
             </section>
 
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+            <div className="stagger-children grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
               <ManagedDevicesTable devices={filteredDevices} />
 
               <div className="space-y-3">
@@ -230,7 +234,7 @@ export function AccessControlDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,.75fr)_minmax(0,.9fr)]">
+            <div className="stagger-children grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,.75fr)_minmax(0,.9fr)]">
               <div className="rounded-lg bg-white dark:bg-slate-900">
                 <div className="mb-2 flex items-center justify-between px-2 pt-2">
                   <h3 className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Recent Access Control Actions</h3>
@@ -305,7 +309,7 @@ export function AccessControlDashboard() {
               </p>
             </footer>
           </div>
-        </main>
+        </motion.main>
       </div>
     </div>
   );

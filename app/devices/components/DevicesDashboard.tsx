@@ -1,12 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import {
-  Search, Bell, Menu, RefreshCw, Eye, Settings2, Check, Ban, X, Monitor, Smartphone, Laptop, Tv, Printer, HelpCircle, ChevronRight,
+  Search, Menu, RefreshCw, Eye, Settings2, Check, Ban, X, Monitor, Smartphone, Laptop, Tv, Printer, HelpCircle, ChevronRight,
 } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppData, type DeviceType, type DeviceStatus, type RiskLevel, type Device } from '@/lib/store';
 
@@ -33,8 +36,18 @@ function statusBadge(status: DeviceStatus) {
 
 export function DevicesDashboard() {
   const { devices, updateDeviceStatus, scanNetwork } = useAppData();
+  const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState(false);
-  const [query, setQuery] = useState('');
+  // query's initial value is read from the ?q= URL parameter (falling
+  // back to an empty string if absent). This is what makes GlobalSearch's
+  // "jump to Devices with this search term" links actually work — when
+  // GlobalSearch navigates to e.g. /devices?q=printer, this line picks
+  // that value up on mount so the local search box here starts already
+  // filtered, instead of landing on an unfiltered device list and
+  // forcing the user to retype their search. Once mounted, query behaves
+  // as ordinary local state (searchParams is only consulted for this one
+  // initial value, not re-read on every render).
+  const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const [statusFilter, setStatusFilter] = useState<DeviceStatus | 'All'>('All');
   const [riskFilter, setRiskFilter] = useState<RiskLevel | 'All'>('All');
   const [page, setPage] = useState(1);
@@ -104,17 +117,17 @@ export function DevicesDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <div className="relative">
-              <Bell className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-              <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[7px] font-bold text-white">
-                {devices.filter((d) => d.status === 'Unknown').length}
-              </span>
-            </div>
+            <NotificationBell />
             <AdminMenu />
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-5 py-4">
+        <motion.main
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="flex-1 overflow-y-auto px-5 py-4"
+        >
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex flex-1 items-center sm:flex-none">
@@ -158,7 +171,7 @@ export function DevicesDashboard() {
               </button>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="stagger-rows overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
               <div className="grid grid-cols-[1.4fr_1fr_1.2fr_0.8fr_0.9fr_0.8fr] gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-[11px] font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
                 <span>Device Name</span>
                 <span>IP Address</span>
@@ -260,7 +273,7 @@ export function DevicesDashboard() {
               </div>
             </div>
           </div>
-        </main>
+        </motion.main>
       </div>
 
       {viewDevice && (

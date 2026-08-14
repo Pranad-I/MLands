@@ -8,10 +8,12 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
-  Search, Bell, Menu, Monitor, ClipboardList, AlertOctagon, Timer, Server, Database, CheckCircle2, ExternalLink, ShieldAlert, HelpCircle,
+  Bell, Menu, Monitor, ClipboardList, AlertOctagon, Timer, Server, Database, CheckCircle2, ExternalLink, ShieldAlert, HelpCircle,
 } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
+import { GlobalSearch } from '@/components/GlobalSearch';
+import { NotificationBell } from '@/components/NotificationBell';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { useAppData } from '@/lib/store';
@@ -96,20 +98,9 @@ export function DashboardOverview() {
             <h1 className="text-sm font-bold text-slate-700 dark:text-slate-200">Dashboard</h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="relative flex items-center">
-              <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400" />
-              <input
-                placeholder="Search devices..."
-                className="h-8 w-48 rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-600 outline-none placeholder:text-slate-400 focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-              />
-            </div>
+            <GlobalSearch placeholder="Search devices..." />
             <ThemeToggle />
-            <div className="relative">
-              <Bell className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-              <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[7px] font-bold text-white">
-                {alerts.filter((a) => a.status === 'Active').length}
-              </span>
-            </div>
+            <NotificationBell />
             <AdminMenu />
           </div>
         </header>

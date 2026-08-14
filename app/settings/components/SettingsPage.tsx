@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Search, Bell, Menu, Save, Wifi, Lock, UserCircle, Sparkles, Droplets, CircleDot,
 } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { getThemeTransitionStyle, setThemeTransitionStyle, type ThemeTransitionStyle } from '@/lib/themeTransition';
 
@@ -36,9 +38,33 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
   );
 }
 
-function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
+/**
+ * Section wraps one settings card (Appearance, Notifications, Security,
+ * Network, Account) and doubles as the mechanism behind the settings
+ * search box: each Section receives the current search query plus a
+ * `keywords` string of extra search terms relevant to that section's
+ * content (e.g. "theme dark light transition dissolve wipe animation"
+ * for Appearance) that wouldn't otherwise be found by matching against
+ * the visible title alone. If the query doesn't appear in either the
+ * title or keywords, the Section renders nothing at all (returns null)
+ * rather than being hidden with CSS — this keeps hidden sections fully
+ * out of the DOM rather than just visually hidden, and it means the
+ * search "hide/show" decision lives in one place per section, at the top
+ * of this function, rather than being threaded through each Section's
+ * caller individually.
+ *
+ * When query is empty (the default / no active search), the `if` check
+ * short-circuits and every Section renders normally — search filtering
+ * only ever narrows what's shown, it's never the reason a section fails
+ * to appear when the user hasn't typed anything.
+ */
+function Section({ icon: Icon, title, keywords = '', query = '', children }: {
+  icon: React.ElementType; title: string; keywords?: string; query?: string; children: React.ReactNode;
+}) {
+  const q = query.trim().toLowerCase();
+  if (q && !`${title} ${keywords}`.toLowerCase().includes(q)) return null;
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <div className="hover-lift rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-1 flex items-center gap-2">
         <Icon className="h-4 w-4 text-blue-600" />
         <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{title}</h3>
@@ -50,6 +76,13 @@ function Section({ icon: Icon, title, children }: { icon: React.ElementType; tit
 
 export function SettingsPage() {
   const [collapsed, setCollapsed] = useState(false);
+  // settingsQuery holds the current text typed into the header search
+  // box (below), and is passed down to every Section as its `query`
+  // prop so each section can independently decide whether it matches
+  // (see Section's documentation above for the actual matching logic).
+  // Kept as page-level state (rather than inside Section itself) since
+  // one search box needs to affect every section at once.
+  const [settingsQuery, setSettingsQuery] = useState('');
   const [transitionStyle, setTransitionStyle] = useState<ThemeTransitionStyle>('dissolve');
 
   useEffect(() => {
@@ -99,19 +132,27 @@ export function SettingsPage() {
             <div className="relative flex items-center">
               <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
+                value={settingsQuery}
+                onChange={(e) => setSettingsQuery(e.target.value)}
                 placeholder="Search settings..."
+                aria-label="Search settings"
                 className="h-8 w-48 rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-600 outline-none placeholder:text-slate-400 focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
             <ThemeToggle />
-            <Bell className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+            <NotificationBell />
             <AdminMenu />
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-5 py-4">
-          <div className="mx-auto max-w-3xl space-y-4">
-            <Section icon={Sparkles} title="Appearance">
+        <motion.main
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="flex-1 overflow-y-auto px-5 py-4"
+        >
+          <div className="stagger-children mx-auto max-w-3xl space-y-4">
+            <Section icon={Sparkles} title="Appearance" query={settingsQuery} keywords="theme dark light transition dissolve wipe animation">
               <Row label="Theme transition animation" hint="How the app animates when switching between light and dark mode.">
                 <div className="flex gap-2">
                   <button
@@ -140,7 +181,7 @@ export function SettingsPage() {
               </Row>
             </Section>
 
-            <Section icon={Bell} title="Notifications">
+            <Section icon={Bell} title="Notifications" query={settingsQuery} keywords="email sms weekly report digest alerts">
               <Row label="Email alerts" hint="Get notified by email when new alerts are raised.">
                 <Toggle checked={emailAlerts} onChange={setEmailAlerts} />
               </Row>
@@ -152,7 +193,7 @@ export function SettingsPage() {
               </Row>
             </Section>
 
-            <Section icon={Lock} title="Security">
+            <Section icon={Lock} title="Security" query={settingsQuery} keywords="quarantine risk threshold two-factor 2fa session timeout">
               <Row label="Auto-quarantine suspicious devices" hint="Automatically quarantine devices above the risk threshold.">
                 <Toggle checked={autoQuarantine} onChange={setAutoQuarantine} />
               </Row>
@@ -190,7 +231,7 @@ export function SettingsPage() {
               </Row>
             </Section>
 
-            <Section icon={Wifi} title="Network">
+            <Section icon={Wifi} title="Network" query={settingsQuery} keywords="guest network scan interval vulnerability">
               <Row label="Guest network enabled" hint="Allow visitors to connect on an isolated segment.">
                 <Toggle checked={guestNetwork} onChange={setGuestNetwork} />
               </Row>
@@ -208,7 +249,7 @@ export function SettingsPage() {
               </Row>
             </Section>
 
-            <Section icon={UserCircle} title="Account">
+            <Section icon={UserCircle} title="Account" query={settingsQuery} keywords="display name email profile admin">
               <div className="grid grid-cols-1 gap-3 py-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">Display name</label>
@@ -238,7 +279,7 @@ export function SettingsPage() {
               </button>
             </div>
           </div>
-        </main>
+        </motion.main>
       </div>
     </div>
   );

@@ -374,3 +374,55 @@ input[type='range'].styled-slider:disabled {
   outline: none;
 }
 
+/* ── Page-level entrance + interaction animations ── */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.stagger-children > * {
+  animation: rise-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-children > *:nth-child(1)  { animation-delay: 0.03s; }
+.stagger-children > *:nth-child(2)  { animation-delay: 0.06s; }
+.stagger-children > *:nth-child(3)  { animation-delay: 0.09s; }
+.stagger-children > *:nth-child(4)  { animation-delay: 0.12s; }
+.stagger-children > *:nth-child(5)  { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(6)  { animation-delay: 0.18s; }
+.stagger-children > *:nth-child(7)  { animation-delay: 0.21s; }
+.stagger-children > *:nth-child(8)  { animation-delay: 0.24s; }
+.stagger-children > *:nth-child(9)  { animation-delay: 0.27s; }
+.stagger-children > *:nth-child(10) { animation-delay: 0.30s; }
+.stagger-children > *:nth-child(n + 11) { animation-delay: 0.33s; }
+
+.stagger-rows > * {
+  animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-rows > *:nth-child(1)  { animation-delay: 0.02s; }
+.stagger-rows > *:nth-child(2)  { animation-delay: 0.05s; }
+.stagger-rows > *:nth-child(3)  { animation-delay: 0.08s; }
+.stagger-rows > *:nth-child(4)  { animation-delay: 0.11s; }
+.stagger-rows > *:nth-child(5)  { animation-delay: 0.14s; }
+.stagger-rows > *:nth-child(6)  { animation-delay: 0.17s; }
+.stagger-rows > *:nth-child(7)  { animation-delay: 0.20s; }
+.stagger-rows > *:nth-child(8)  { animation-delay: 0.23s; }
+.stagger-rows > *:nth-child(n + 9) { animation-delay: 0.26s; }
+
+.hover-lift {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(2, 109, 200, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-children > *,
+  .stagger-rows > * { animation: none; }
+  .hover-lift:hover { transform: none; }
+}
+

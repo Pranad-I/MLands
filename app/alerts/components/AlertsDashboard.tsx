@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
-  Search, Bell, Menu, ShieldAlert, AlertTriangle, Info, CheckCircle2, HelpCircle, Filter, Download, Eye, Settings2, ChevronRight,
+  Search, Menu, ShieldAlert, AlertTriangle, Info, CheckCircle2, HelpCircle, Filter, Download, Eye, Settings2, ChevronRight, Bell,
 } from 'lucide-react';
 import {
   CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart,
@@ -12,6 +13,7 @@ import {
 } from 'recharts';
 import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppData, type AlertType, type Severity, type SecurityAlert } from '@/lib/store';
 import { deviceActionController } from '@/lib/services/device-action-controller';
@@ -31,7 +33,7 @@ function StatCard({ label, value, sub, icon: Icon, bg, text }: {
   label: string; value: number; sub: string; icon: React.ElementType; bg: string; text: string;
 }) {
   return (
-    <div className={`rounded-xl border p-4 ${bg}`}>
+    <div className={`hover-lift rounded-xl border p-4 ${bg}`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
@@ -54,6 +56,14 @@ export function AlertsDashboard() {
   const [tab, setTab] = useState<'All' | 'High' | 'Medium' | 'Low' | 'Resolved'>('All');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewAlert, setViewAlert] = useState<SecurityAlert | null>(null);
+  // statusFilter/filterOpen back the Filter button in the toolbar below.
+  // Previously that button rendered with no onClick handler and no
+  // backing state at all — visually present but entirely inert. These
+  // two pieces of state make it a genuine control: statusFilter holds
+  // the currently chosen status ('All' | 'Active' | 'Resolved') and
+  // filterOpen tracks whether its dropdown menu is currently showing.
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Resolved'>('All');
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const counts = useMemo(() => ({
     all: alerts.length,
@@ -72,6 +82,15 @@ export function AlertsDashboard() {
     { label: 'Resolved', value: 'Resolved' as const, count: counts.resolved },
   ];
 
+  // Combines three independent filters — the severity/resolved tab, the
+  // free-text search box, and statusFilter — into the final list of
+  // alerts shown and exported. matchesStatus (comparing against
+  // statusFilter) is the piece that previously didn't exist: before this
+  // fix, the Filter button had nothing wired to it, so this function
+  // only ever considered tab and query, meaning the status filter had no
+  // way to actually narrow the results even if the UI had implied it
+  // could. All three conditions must hold (matchesTab && matchesQuery &&
+  // matchesStatus) for an alert to appear.
   const filtered = useMemo(() => {
     return alerts.filter((a) => {
       const matchesTab = tab === 'All'
@@ -81,9 +100,49 @@ export function AlertsDashboard() {
         || (tab === 'Resolved' && a.status === 'Resolved');
       const q = query.trim().toLowerCase();
       const matchesQuery = !q || a.title.toLowerCase().includes(q) || a.device.toLowerCase().includes(q);
-      return matchesTab && matchesQuery;
+      const matchesStatus = statusFilter === 'All' || a.status === statusFilter;
+      return matchesTab && matchesQuery && matchesStatus;
     });
-  }, [alerts, tab, query]);
+  }, [alerts, tab, query, statusFilter]);
+
+  /**
+   * Builds a CSV of the currently filtered alerts and triggers a browser
+   * download. This function is the actual implementation behind the
+   * Export button in the toolbar.
+   *
+   * Previously, the Export button's onClick was wired to
+   * resolveAllAlerts (the same function used by the "Resolve all"
+   * action elsewhere) rather than to any export logic — so clicking
+   * "Export" silently marked every alert as resolved instead of
+   * downloading anything. exportCsv() replaces that mis-wired handler
+   * with a genuine CSV export, deliberately scoped to `filtered` (not
+   * the full `alerts` array) so exporting respects whatever tab/search/
+   * status filter the user currently has applied — exporting "what I'm
+   * currently looking at" rather than always exporting everything
+   * regardless of the active view.
+   *
+   * The CSV-building logic here duplicates what csvExportService.exportRows
+   * already does elsewhere in the codebase (lib/services/csv-export-service.ts).
+   * It was written inline as the minimal, targeted fix for the mis-wired
+   * button described above, rather than refactored to call the shared
+   * service — see the NOTE in csv-export-service.ts for more on this.
+   */
+  function exportCsv() {
+    const rows = [
+      ['Time', 'Title', 'Device', 'Type', 'Severity', 'Status'],
+      ...filtered.map((a) => [a.timestamp, a.title, a.device, a.alertType, a.severity, a.status]),
+    ];
+    const csv = rows
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `mlands-alerts-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} alert${filtered.length === 1 ? '' : 's'}`);
+  }
 
   const selected: SecurityAlert | null = useMemo(
     () => alerts.find((a) => a.id === selectedId)
@@ -168,19 +227,19 @@ export function AlertsDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <div className="relative">
-              <Bell className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-              <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[7px] font-bold text-white">
-                {counts.unresolved}
-              </span>
-            </div>
+            <NotificationBell />
             <AdminMenu />
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-5 py-4">
+        <motion.main
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="flex-1 overflow-y-auto px-5 py-4"
+        >
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+            <div className="stagger-children grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
               <StatCard label="Total Alerts (Today)" value={counts.all} sub="+16% vs yesterday" icon={Bell} bg="border-blue-100 bg-blue-50/60 dark:border-blue-500/20 dark:bg-blue-500/5" text="text-blue-600 dark:text-blue-400" />
               <StatCard label="High Priority" value={counts.high} sub={`${counts.all ? Math.round((counts.high / counts.all) * 100) : 0}%`} icon={ShieldAlert} bg="border-red-100 bg-red-50/60 dark:border-red-500/20 dark:bg-red-500/5" text="text-red-600 dark:text-red-400" />
               <StatCard label="Medium Priority" value={counts.medium} sub={`${counts.all ? Math.round((counts.medium / counts.all) * 100) : 0}%`} icon={AlertTriangle} bg="border-amber-100 bg-amber-50/60 dark:border-amber-500/20 dark:bg-amber-500/5" text="text-amber-600 dark:text-amber-400" />
@@ -217,11 +276,63 @@ export function AlertsDashboard() {
                         className="h-8 w-40 rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-600 outline-none placeholder:text-slate-400 focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                       />
                     </div>
-                    <button className="flex h-8 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800">
-                      <Filter className="h-3.5 w-3.5" />
-                    </button>
+                    {/*
+                      Filter button + dropdown: the button itself changes
+                      colour (filled blue vs. plain outline) depending on
+                      whether statusFilter is anything other than 'All',
+                      giving a visual cue that a filter is currently
+                      active even when the dropdown itself is closed.
+                      Clicking an option sets statusFilter and closes the
+                      dropdown in the same click, rather than requiring a
+                      separate "apply" step. 'Active' is displayed to the
+                      user as "Unresolved" (clearer wording for this
+                      context) while the underlying value stored in
+                      statusFilter stays 'Active' to match the Alert
+                      type's actual status field.
+                    */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setFilterOpen((v) => !v)}
+                        title="Filter by status"
+                        className={`flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs transition-colors ${
+                          statusFilter === 'All'
+                            ? 'border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'
+                            : 'border-blue-600 bg-blue-600 text-white'
+                        }`}
+                      >
+                        <Filter className="h-3.5 w-3.5" />
+                      </button>
+                      <AnimatePresence>
+                        {filterOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute right-0 top-9 z-40 w-36 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                          >
+                            {(['All', 'Active', 'Resolved'] as const).map((option) => (
+                              <button
+                                key={option}
+                                onClick={() => {
+                                  setStatusFilter(option);
+                                  setFilterOpen(false);
+                                }}
+                                className={`block w-full px-3 py-1.5 text-left text-xs transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                                  statusFilter === option
+                                    ? 'font-semibold text-blue-600'
+                                    : 'text-slate-600 dark:text-slate-300'
+                                }`}
+                              >
+                                {option === 'Active' ? 'Unresolved' : option}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                     <button
-                      onClick={resolveAllAlerts}
+                      onClick={exportCsv}
                       className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 text-xs font-medium text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
                     >
                       <Download className="h-3.5 w-3.5" /> Export
@@ -403,7 +514,7 @@ export function AlertsDashboard() {
               </p>
             </div>
           </div>
-        </main>
+        </motion.main>
       </div>
 
       {viewAlert && (

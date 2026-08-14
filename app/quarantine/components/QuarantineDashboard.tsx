@@ -1,13 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
-  Search, Bell, Menu, ShieldAlert, Timer, Cog, CheckCircle2, Eye, RefreshCcw, Ban, Clock,
+  Search, Menu, ShieldAlert, Timer, Cog, CheckCircle2, Eye, RefreshCcw, Ban, Clock,
 } from 'lucide-react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppData, type QuarantinedDevice, type RiskLevel } from '@/lib/store';
 
@@ -28,7 +30,7 @@ function StatCard({ label, value, sub, icon: Icon, bg, text }: {
   label: string; value: string | number; sub: string; icon: React.ElementType; bg: string; text: string;
 }) {
   return (
-    <div className={`rounded-xl border p-4 ${bg}`}>
+    <div className={`hover-lift rounded-xl border p-4 ${bg}`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
@@ -111,14 +113,19 @@ export function QuarantineDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Bell className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+            <NotificationBell />
             <AdminMenu />
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-5 py-4">
+        <motion.main
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="flex-1 overflow-y-auto px-5 py-4"
+        >
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+            <div className="stagger-children grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
               <StatCard label="Quarantined Devices" value={stats.total} sub="currently isolated" icon={ShieldAlert} bg="border-red-100 bg-red-50/60 dark:border-red-500/20 dark:bg-red-500/5" text="text-red-600 dark:text-red-400" />
               <StatCard label="High Risk Devices" value={stats.highRisk} sub="require attention" icon={ShieldAlert} bg="border-amber-100 bg-amber-50/60 dark:border-amber-500/20 dark:bg-amber-500/5" text="text-amber-600 dark:text-amber-400" />
               <StatCard label="Quarantine Since" value={stats.longest} sub="longest isolation time" icon={Clock} bg="border-purple-100 bg-purple-50/60 dark:border-purple-500/20 dark:bg-purple-500/5" text="text-purple-600 dark:text-purple-400" />
@@ -126,7 +133,7 @@ export function QuarantineDashboard() {
               <StatCard label="Released Today" value={releasedToday} sub="device" icon={CheckCircle2} bg="border-emerald-100 bg-emerald-50/60 dark:border-emerald-500/20 dark:bg-emerald-500/5" text="text-emerald-600 dark:text-emerald-400" />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.7fr_1fr]">
+            <div className="stagger-children grid grid-cols-1 gap-4 xl:grid-cols-[1.7fr_1fr]">
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center justify-between border-b border-slate-100 p-4 dark:border-slate-800">
                   <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200">Quarantined Devices</h2>
@@ -283,7 +290,7 @@ export function QuarantineDashboard() {
               </p>
             </div>
           </div>
-        </main>
+        </motion.main>
       </div>
     </div>
   );

@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-  Search, Bell, Menu, Shield, Cpu, Wifi, Github,
+  Menu, Shield, Cpu, Wifi, Github,
 } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { AdminMenu } from '@/components/AdminMenu';
+import { GlobalSearch } from '@/components/GlobalSearch';
+import { NotificationBell } from '@/components/NotificationBell';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { systemMetadataService } from '@/lib/services/system-metadata-service';
 
@@ -26,21 +29,20 @@ export function AboutPage() {
             <h1 className="text-sm font-bold text-slate-700 dark:text-slate-200">About</h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="relative flex items-center">
-              <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400" />
-              <input
-                placeholder="Search..."
-                className="h-8 w-48 rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-600 outline-none placeholder:text-slate-400 focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-              />
-            </div>
+            <GlobalSearch placeholder="Search..." />
             <ThemeToggle />
-            <Bell className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+            <NotificationBell />
             <AdminMenu />
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-5 py-4">
-          <div className="mx-auto max-w-3xl space-y-4">
+        <motion.main
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="flex-1 overflow-y-auto px-5 py-4"
+        >
+          <div className="stagger-children mx-auto max-w-3xl space-y-4">
             <div className="rounded-xl border border-slate-200 bg-white p-6 text-center dark:border-slate-800 dark:bg-slate-900">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600">
                 <Shield className="h-6 w-6 text-white" />
@@ -92,7 +94,7 @@ export function AboutPage() {
               <Github className="h-4 w-4" /> MLaNDS · built for local network security monitoring
             </div>
           </div>
-        </main>
+        </motion.main>
       </div>
     </div>
   );
