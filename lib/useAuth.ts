@@ -15,15 +15,29 @@ import { supabase, isSupabaseConfigured } from './supabase';
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReachable, setAuthReachable] = useState(isSupabaseConfigured);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setSession(data.session ?? null);
-      setLoading(false);
-    });
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!active) return;
+        setSession(data.session ?? null);
+      } catch {
+        if (!active) return;
+        setSession(null);
+        setAuthReachable(false);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession ?? null);
@@ -42,5 +56,5 @@ export function useAuth() {
 
   const user: User | null = (session?.user as User | undefined) ?? null;
 
-  return { session, user, loading, signOut, isSupabaseConfigured };
+  return { session, user, loading, signOut, isSupabaseConfigured: isSupabaseConfigured && authReachable };
 }
